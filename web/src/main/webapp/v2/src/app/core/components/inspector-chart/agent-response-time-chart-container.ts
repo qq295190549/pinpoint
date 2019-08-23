@@ -2,11 +2,12 @@ import { PrimitiveArray, Data } from 'billboard.js';
 import { Observable } from 'rxjs';
 
 import { IInspectorChartContainer } from './inspector-chart-container-factory';
-import { makeYData, makeXData, getMaxTickValue } from './inspector-chart-util';
+import { makeYData, makeXData, getMaxTickValue } from 'app/core/utils/chart-util';
 import { IInspectorChartData, InspectorChartDataService } from './inspector-chart-data.service';
 
 export class AgentResponseTimeChartContainer implements IInspectorChartContainer {
     private apiUrl = 'getAgentStat/responseTime/chart.pinpoint';
+
     defaultYMax = 100;
     title = 'Response Time';
 
@@ -28,7 +29,10 @@ export class AgentResponseTimeChartContainer implements IInspectorChartContainer
 
     makeDataOption(): Data {
         return {
-            type: 'area-spline',
+            types: {
+                avg: 'area-spline',
+                max: 'spline'
+            },
             names: {
                 avg: 'Avg',
                 max: 'Max'
@@ -80,5 +84,9 @@ export class AgentResponseTimeChartContainer implements IInspectorChartContainer
                 ? (v / 1000).toString()
                 : (arr.splice(i + 1), Number.isInteger(v) ? `${v}${curr}` : `${v.toFixed(2)}${curr}`);
         }, value.toString());
+    }
+
+    getTooltipFormat(v: number, columnId: string, i: number): string {
+        return this.convertWithUnit(v);
     }
 }

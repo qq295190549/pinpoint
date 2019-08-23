@@ -2,11 +2,12 @@ import { PrimitiveArray, Data } from 'billboard.js';
 import { Observable } from 'rxjs';
 
 import { IInspectorChartContainer } from './inspector-chart-container-factory';
-import { makeYData, makeXData, getMaxTickValue } from './inspector-chart-util';
+import { makeYData, makeXData, getMaxTickValue, getStackedData } from 'app/core/utils/chart-util';
 import { IInspectorChartData, InspectorChartDataService } from './inspector-chart-data.service';
 
 export class AgentTPSChartContainer implements IInspectorChartContainer {
     private apiUrl = 'getAgentStat/transaction/chart.pinpoint';
+
     defaultYMax = 4;
     title = 'Transactions Per Second';
 
@@ -25,6 +26,8 @@ export class AgentTPSChartContainer implements IInspectorChartContainer {
             ['tpsSN', ...makeYData(charts.y['TPS_SAMPLED_NEW'], 2)],
             ['tpsUC', ...makeYData(charts.y['TPS_UNSAMPLED_CONTINUATION'], 2)],
             ['tpsUN', ...makeYData(charts.y['TPS_UNSAMPLED_NEW'], 2)],
+            ['tpsSSN', ...makeYData(charts.y['TPS_SKIPPED_NEW'], 2)],
+            ['tpsSSC', ...makeYData(charts.y['TPS_SKIPPED_CONTINUATION'], 2)],
             ['tpsT', ...makeYData(charts.y['TPS_TOTAL'], 2)],
         ];
     }
@@ -37,6 +40,8 @@ export class AgentTPSChartContainer implements IInspectorChartContainer {
                 tpsSN: 'S.N',
                 tpsUC: 'U.C',
                 tpsUN: 'U.N',
+                tpsSSN: 'S.S.N',
+                tpsSSC: 'S.S.C',
                 tpsT: 'Total'
             },
             colors: {
@@ -44,8 +49,14 @@ export class AgentTPSChartContainer implements IInspectorChartContainer {
                 tpsSN: 'rgba(252, 178, 65, 0.4)',
                 tpsUC: 'rgba(90, 103, 166, 0.4)',
                 tpsUN: 'rgba(160, 153, 255, 0.4)',
-                tpsT: 'rgba(31, 119, 180, 0.4)'
-            }
+                tpsSSN: 'rgba(26, 188, 156, 0.4)',
+                tpsSSC: 'rgba(82, 190, 128, 0.4)',
+                tpsT: 'rgb(255, 255, 255)'
+            },
+            groups: [
+                ['tpsSC', 'tpsSN', 'tpsUC', 'tpsUN', 'tpsSSN', 'tpsSSC', 'tpsT']
+            ],
+            order: null
         };
     }
 
@@ -70,7 +81,7 @@ export class AgentTPSChartContainer implements IInspectorChartContainer {
                 },
                 min: 0,
                 max: (() => {
-                    const maxTickValue = getMaxTickValue(data, 1);
+                    const maxTickValue = getMaxTickValue(getStackedData(data.slice(0, -1)), 1);
 
                     return maxTickValue === 0 ? this.defaultYMax : maxTickValue;
                 })(),
@@ -89,5 +100,9 @@ export class AgentTPSChartContainer implements IInspectorChartContainer {
                 ? (v / 1000).toString()
                 : (arr.splice(i + 1), `${v}${curr}`);
         }, value.toString());
+    }
+
+    getTooltipFormat(v: number, columnId: string, i: number): string {
+        return this.convertWithUnit(v);
     }
 }

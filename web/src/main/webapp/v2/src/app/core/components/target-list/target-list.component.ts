@@ -6,36 +6,37 @@ import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChange
     styleUrls: ['./target-list.component.css']
 })
 export class TargetListComponent implements OnInit, OnChanges {
-    selectedAppName = '';
     @Input() isLink: boolean;
     @Input() targetList: any[];
     @Output() outSelectTarget: EventEmitter<any> = new EventEmitter();
     @Output() outOpenFilter: EventEmitter<any> = new EventEmitter();
     @Output() outOpenFilterWizard: EventEmitter<any> = new EventEmitter();
-    constructor() { }
+
+    selectedAppName = '';
+
+    constructor() {}
     ngOnInit() {}
     ngOnChanges(changes: SimpleChanges) {
         if (this.targetList && this.targetList.length === 1) {
-            if (this.isLink === false) {
-                this.onSelectTarget(this.targetList[0]);
+            if (!this.isLink) {
+                this.setSelectedAppName(this.targetList[0][0]);
             }
         }
     }
+
     onSelectTarget(target: any): void {
-        const sendTarget = target[0];
-        if (sendTarget.applicationName) {
-            this.selectedAppName = sendTarget.applicationName;
-        } else {
-            this.selectedAppName = sendTarget.sourceInfo.applicationName + '-' + sendTarget.targetInfo.applicationName;
-        }
-        this.outSelectTarget.emit(sendTarget);
+        this.setSelectedAppName(target[0]);
+        this.outSelectTarget.emit(target[0]);
     }
+
     onOpenFilter($event: any, target: any): void {
         this.outOpenFilter.emit(target);
     }
+
     onOpenFilterWizard($event: any, target: any): void {
         this.outOpenFilterWizard.emit(target);
     }
+
     isSelected(target: any): boolean {
         if (target[0].applicationName) {
             return this.selectedAppName === target[0].applicationName;
@@ -43,11 +44,18 @@ export class TargetListComponent implements OnInit, OnChanges {
             return this.selectedAppName === (target[0].sourceInfo.applicationName + '-' + target[0].targetInfo.applicationName);
         }
     }
+
     getApplicationName(target: any): string {
         if (this.isLink) {
             return target[0].targetInfo.applicationName;
         } else {
             return target[0].applicationName;
         }
+    }
+
+    private setSelectedAppName(target: any): void {
+        const {applicationName, sourceInfo, targetInfo} = target;
+
+        this.selectedAppName = applicationName ? applicationName : `${sourceInfo.applicationName}-${targetInfo.applicationName}`;
     }
 }

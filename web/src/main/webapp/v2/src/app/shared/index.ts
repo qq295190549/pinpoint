@@ -22,7 +22,6 @@ import { AnalyticsService } from './services/analytics.service';
 import { BrowserSupportCheckService } from './services/browser-support-check.service';
 import { AgentHistogramDataService } from './services/agent-histogram-data.service';
 import { TransactionDetailDataService } from './services/transaction-detail-data.service';
-import { TransactionViewTypeService } from './services/transaction-view-type.service';
 import { StoreHelperService } from './services/store-helper.service';
 import { UrlValidateGuard } from './services/url-validate.guard';
 
@@ -44,6 +43,7 @@ import { MessageQueueService } from './services/message-queue.service';
 import { WindowRefService } from './services/window-ref.service';
 import { ApplicationListDataService } from './services/application-list-data.service';
 import { SafeStylePipe } from './pipes/safe-style.pipe';
+import { RetryComponent } from './components/retry';
 
 @NgModule({
     declarations: [
@@ -52,6 +52,7 @@ import { SafeStylePipe } from './pipes/safe-style.pipe';
         EmptyContentsComponent,
         UrlRedirectorComponent,
         LoadingComponent,
+        RetryComponent,
         FilmForDisableComponent,
         SimpleProgressSliderComponent,
         FormFieldErrorMessageComponent,
@@ -78,6 +79,7 @@ import { SafeStylePipe } from './pipes/safe-style.pipe';
         EmptyContentsComponent,
         UrlRedirectorComponent,
         LoadingComponent,
+        RetryComponent,
         FilmForDisableComponent,
         SimpleProgressSliderComponent,
         FormFieldErrorMessageComponent,
@@ -115,7 +117,6 @@ export class SharedModule {
                 BrowserSupportCheckService,
                 AgentHistogramDataService,
                 TransactionDetailDataService,
-                TransactionViewTypeService,
                 MessageQueueService,
                 DynamicPopupService,
                 ApplicationListResolverService,

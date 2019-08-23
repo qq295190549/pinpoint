@@ -64,7 +64,6 @@
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-right: 16px;
     height: calc(100vh - 150px);
 }
 
@@ -74,6 +73,7 @@
     width: 348px;
     background: #f8f9fb;
     border: none;
+    border-left: 1px solid #e5e8f0;
     position: absolute;
     height: 100%;
     overflow-y: hidden;
@@ -90,8 +90,8 @@
 }
 .l-title-group3 .fas {
     font-size: 14px;
-    width: 33px;
-    height: 33px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     background: #4a8fd2;
     color: #fff;
@@ -121,4 +121,5 @@
 hr {
     height: 1px;
     border-top: 1px solid #EAEEF4;
+    margin: 5px 0;
 }

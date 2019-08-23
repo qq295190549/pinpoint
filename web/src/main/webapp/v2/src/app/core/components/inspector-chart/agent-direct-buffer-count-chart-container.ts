@@ -2,11 +2,12 @@ import { PrimitiveArray, Data } from 'billboard.js';
 import { Observable } from 'rxjs';
 
 import { IInspectorChartContainer } from './inspector-chart-container-factory';
-import { makeYData, makeXData, getMaxTickValue } from './inspector-chart-util';
+import { makeYData, makeXData, getMaxTickValue } from 'app/core/utils/chart-util';
 import { IInspectorChartData, InspectorChartDataService } from './inspector-chart-data.service';
 
 export class AgentDirectBufferCountChartContainer implements IInspectorChartContainer {
     private apiUrl = 'getAgentStat/directBuffer/chart.pinpoint';
+
     defaultYMax = 100;
     title = 'Direct Buffer Count';
 
@@ -27,7 +28,7 @@ export class AgentDirectBufferCountChartContainer implements IInspectorChartCont
 
     makeDataOption(): Data {
         return {
-            type: 'area-spline',
+            type: 'spline',
             names: {
                 directCount: 'Direct Buffer Count',
             },
@@ -69,5 +70,9 @@ export class AgentDirectBufferCountChartContainer implements IInspectorChartCont
 
     convertWithUnit(value: number): string {
         return value.toString();
+    }
+
+    getTooltipFormat(v: number, columnId: string, i: number): string {
+        return Number.isInteger(v) ? v.toString() : v.toFixed(2);
     }
 }

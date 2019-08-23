@@ -3,6 +3,7 @@ import { Subject, forkJoin, combineLatest, of } from 'rxjs';
 import { takeUntil, tap, switchMap, catchError } from 'rxjs/operators';
 import * as moment from 'moment-timezone';
 import { TranslateService } from '@ngx-translate/core';
+import { PrimitiveArray, Data } from 'billboard.js';
 
 import {
     StoreHelperService,
@@ -13,11 +14,9 @@ import {
     MESSAGE_TO
 } from 'app/shared/services';
 import { InspectorPageService, ISourceForChart } from 'app/routes/inspector-page/inspector-page.service';
-import { IChartConfig } from './inspector-chart.component';
 import { isThatType } from 'app/core/utils/util';
 import { HELP_VIEWER_LIST, HelpViewerPopupContainerComponent } from 'app/core/components/help-viewer-popup/help-viewer-popup-container.component';
 import { IInspectorChartData, InspectorChartDataService } from './inspector-chart-data.service';
-import { PrimitiveArray, Data } from 'billboard.js';
 import { IInspectorChartContainer } from './inspector-chart-container-factory';
 import { ChartType, InspectorChartContainerFactory } from './inspector-chart-container-factory';
 
@@ -47,8 +46,6 @@ export class InspectorChartContainerComponent implements OnInit, OnDestroy {
     private previousRange: number[];
     private timezone: string;
     private dateFormat: string[];
-    private minAgentIdList: string[];
-    private maxAgentIdList: string[];
     private unsubscribe = new Subject<void>();
 
     chartContainer: IInspectorChartContainer;
@@ -88,7 +85,7 @@ export class InspectorChartContainerComponent implements OnInit, OnDestroy {
     private initI18nText(): void {
         forkJoin(
             this.translateService.get('COMMON.FAILED_TO_FETCH_DATA'),
-            this.translateService.get('INSPECTOR.NO_DATA_COLLECTED'),
+            this.translateService.get('COMMON.NO_DATA'),
         ).subscribe(([dataFetchFailedText, dataEmptyText]: string[]) => {
            this.dataFetchFailedText = dataFetchFailedText;
            this.dataEmptyText = dataEmptyText;
@@ -165,9 +162,6 @@ export class InspectorChartContainerComponent implements OnInit, OnDestroy {
             this.setRetryMessage(data);
         } else {
             this.setChartConfig(this.makeChartData(data));
-            if (typeof this.chartContainer.makeMaxAgentIdList === 'function') {
-                this.setMinMaxAgentIdList(data);
-            }
         }
     }
 
@@ -185,11 +179,6 @@ export class InspectorChartContainerComponent implements OnInit, OnDestroy {
 
     private isEmpty(data: PrimitiveArray[]): boolean {
         return data.length === 0 || data.slice(1).every((d: PrimitiveArray) => d.length === 1);
-    }
-
-    private setMinMaxAgentIdList(data: IInspectorChartData): void {
-        this.minAgentIdList = this.chartContainer.makeMinAgentIdList(data);
-        this.maxAgentIdList = this.chartContainer.makeMaxAgentIdList(data);
     }
 
     private makeChartData(data: IInspectorChartData): PrimitiveArray[] {
@@ -247,12 +236,12 @@ export class InspectorChartContainerComponent implements OnInit, OnDestroy {
                 linked: true,
                 format: {
                     value: (v: number, _: number, columnId: string, i: number) => {
-                        const formattedValue = this.chartContainer.convertWithUnit(v);
+                        const formattedValue = this.chartContainer.getTooltipFormat(v, columnId, i);
 
-                        return v < 0 ? '-' :
-                            this.isAgentChart() ? formattedValue : `${formattedValue} ${this.getAgentId(columnId, i)}`;
+                        return v < 0 ? '-' : formattedValue;
                     }
-                }
+                },
+                order: ''
             },
             transition: {
                 duration: 0
@@ -281,13 +270,5 @@ export class InspectorChartContainerComponent implements OnInit, OnDestroy {
             resolver: this.componentFactoryResolver,
             injector: this.injector
         });
-    }
-
-    private getAgentId(columnId: string, index: number): string {
-        return columnId === 'avg' ? '' : `(${columnId === 'min' ? this.minAgentIdList[index] : this.maxAgentIdList[index]})`;
-    }
-
-    private isAgentChart(): boolean {
-        return this.chartType.split('_')[0] === 'AGENT';
     }
 }

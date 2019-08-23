@@ -5,7 +5,7 @@ import { PrimitiveArray, Data } from 'billboard.js';
 import * as moment from 'moment-timezone';
 
 import { ChartType, InspectorChartContainerFactory, IInspectorChartContainer } from './inspector-chart-container-factory';
-import { IChartConfig, InspectorChartComponent } from './inspector-chart.component';
+import { InspectorChartComponent } from './inspector-chart.component';
 import { StoreHelperService, NewUrlStateNotificationService } from 'app/shared/services';
 import { InspectorChartDataService, IInspectorChartData } from './inspector-chart-data.service';
 import { UrlPathId } from 'app/shared/models';
@@ -71,7 +71,7 @@ export class TransactionViewChartContainerComponent implements OnInit, OnDestroy
     private initI18nText(): void {
         forkJoin(
             this.translateService.get('COMMON.FAILED_TO_FETCH_DATA'),
-            this.translateService.get('INSPECTOR.NO_DATA_COLLECTED'),
+            this.translateService.get('COMMON.NO_DATA'),
         ).subscribe(([dataFetchFailedText, dataEmptyText]: string[]) => {
            this.dataFetchFailedText = dataFetchFailedText;
            this.dataEmptyText = dataEmptyText;
@@ -207,7 +207,7 @@ export class TransactionViewChartContainerComponent implements OnInit, OnDestroy
                 linked: true,
                 format: {
                     value: (v: number, _: number, columnId: string, i: number) => {
-                        const formattedValue = this.chartContainer.convertWithUnit(v);
+                        const formattedValue = this.chartContainer.getTooltipFormat(v, columnId, i);
 
                         return v < 0 ? '-' : formattedValue;
                     }

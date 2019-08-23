@@ -18,18 +18,22 @@ package com.navercorp.pinpoint.collector.receiver.grpc;
 
 import com.navercorp.pinpoint.collector.receiver.DispatchHandler;
 import com.navercorp.pinpoint.collector.receiver.grpc.service.AgentService;
+import com.navercorp.pinpoint.collector.receiver.grpc.service.MetadataService;
 import com.navercorp.pinpoint.common.server.util.AddressFilter;
 import com.navercorp.pinpoint.grpc.server.ServerOption;
+import com.navercorp.pinpoint.grpc.server.lifecycle.PingEventHandler;
+import com.navercorp.pinpoint.grpc.trace.PApiMetaData;
 import com.navercorp.pinpoint.grpc.trace.PResult;
 import com.navercorp.pinpoint.io.request.ServerRequest;
 import com.navercorp.pinpoint.io.request.ServerResponse;
 import io.grpc.BindableService;
-import io.grpc.Status;
 
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * @author jaehong.kim
@@ -45,8 +49,9 @@ public class AgentServerTestMain {
         grpcReceiver.setBindIp(IP);
         grpcReceiver.setBindPort(PORT);
 
-        BindableService agentService = new AgentService(new MockDispatchHandler());
-        grpcReceiver.setBindableServiceList(Arrays.asList(agentService));
+        PingEventHandler pingEventHandler = mock(PingEventHandler.class);
+        BindableService agentService = new AgentService(new MockDispatchHandler(), pingEventHandler);
+        grpcReceiver.setBindableServiceList(Arrays.asList(agentService, new MetadataService(new MockDispatchHandler())));
         grpcReceiver.setAddressFilter(new MockAddressFilter());
         grpcReceiver.setExecutor(Executors.newFixedThreadPool(8));
         grpcReceiver.setServerOption(new ServerOption.Builder().build());
@@ -68,7 +73,7 @@ public class AgentServerTestMain {
     }
 
     private static class MockDispatchHandler implements DispatchHandler {
-        private static AtomicInteger counter = new AtomicInteger(0);
+        private static final AtomicInteger counter = new AtomicInteger(0);
 
         @Override
         public void dispatchSendMessage(ServerRequest serverRequest) {
@@ -78,7 +83,12 @@ public class AgentServerTestMain {
         @Override
         public void dispatchRequestMessage(ServerRequest serverRequest, ServerResponse serverResponse) {
             System.out.println("Dispatch request message " + serverRequest + ", " + serverResponse);
-            serverResponse.write(PResult.newBuilder().setMessage("Success" + counter.getAndIncrement()).build());
+            if (serverRequest.getData() instanceof PApiMetaData) {
+                PApiMetaData apiMetaData = (PApiMetaData) serverRequest.getData();
+                serverResponse.write(PResult.newBuilder().setMessage(String.valueOf(apiMetaData.getApiId())).build());
+            } else {
+                serverResponse.write(PResult.newBuilder().setMessage("Success " + counter.getAndIncrement()).build());
+            }
         }
     }
 

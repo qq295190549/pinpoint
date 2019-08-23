@@ -19,10 +19,8 @@ package com.navercorp.pinpoint.grpc.client;
 import com.navercorp.pinpoint.common.util.Assert;
 import com.navercorp.pinpoint.common.util.PinpointThreadFactory;
 import com.navercorp.pinpoint.grpc.ExecutorUtils;
-import com.navercorp.pinpoint.grpc.HeaderFactory;
 
 import io.grpc.ClientInterceptor;
-import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
 import io.grpc.NameResolverProvider;
@@ -30,6 +28,7 @@ import io.grpc.netty.InternalNettyChannelBuilder;
 import io.grpc.netty.NettyChannelBuilder;
 import io.grpc.stub.MetadataUtils;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.concurrent.Future;
@@ -53,7 +52,7 @@ public class ChannelFactory {
 
     private final String name;
     private final HeaderFactory headerFactory;
-    private final NioEventLoopGroup eventLoopGroup;
+    private final EventLoopGroup eventLoopGroup;
     private final ExecutorService eventLoopExecutor;
     private final ExecutorService executorService;
     private final NameResolverProvider nameResolverProvider;
@@ -81,7 +80,7 @@ public class ChannelFactory {
         return Executors.newCachedThreadPool(threadFactory);
     }
 
-    private NioEventLoopGroup newEventLoopGroup(ExecutorService executorService) {
+    private EventLoopGroup newEventLoopGroup(ExecutorService executorService) {
         return new NioEventLoopGroup(1, executorService);
     }
 
@@ -110,7 +109,6 @@ public class ChannelFactory {
         setupClientOption(channelBuilder);
 
         final ManagedChannel channel = channelBuilder.build();
-        setChannelStateNotifier(channel, channelName);
 
         return channel;
     }
@@ -142,6 +140,7 @@ public class ChannelFactory {
         channelBuilder.maxInboundMessageSize(clientOption.getMaxInboundMessageSize());
 
         // ChannelOption
+        channelBuilder.withOption(ChannelOption.TCP_NODELAY, true);
         channelBuilder.withOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, clientOption.getConnectTimeout());
         final WriteBufferWaterMark writeBufferWaterMark = new WriteBufferWaterMark(clientOption.getWriteBufferLowWaterMark(), clientOption.getWriteBufferHighWaterMark());
         channelBuilder.withOption(ChannelOption.WRITE_BUFFER_WATER_MARK, writeBufferWaterMark);
@@ -150,45 +149,8 @@ public class ChannelFactory {
         }
     }
 
-    private void setChannelStateNotifier(ManagedChannel channel, final String name) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("setChannelStateNotifier()");
-        }
-        channel.notifyWhenStateChanged(ConnectivityState.CONNECTING, new Runnable() {
-            @Override
-            public void run() {
-                logger.info("{} CONNECTING", name);
-            }
-        });
-        channel.notifyWhenStateChanged(ConnectivityState.READY, new Runnable() {
-            @Override
-            public void run() {
-                logger.info("{} READY", name);
-            }
-        });
-        channel.notifyWhenStateChanged(ConnectivityState.IDLE, new Runnable() {
-            @Override
-            public void run() {
-                logger.info("{} IDLE", name);
-            }
-        });
-        channel.notifyWhenStateChanged(ConnectivityState.SHUTDOWN, new Runnable() {
-            @Override
-            public void run() {
-                logger.info("{} SHUTDOWN", name);
-            }
-        });
-        channel.notifyWhenStateChanged(ConnectivityState.TRANSIENT_FAILURE, new Runnable() {
-            @Override
-            public void run() {
-                logger.info("{} TRANSIENT_FAILURE", name);
-            }
-        });
-
-        final ConnectivityState state = channel.getState(false);
-        if (logger.isDebugEnabled()) {
-            logger.debug("getState(){}", state);
-        }
+    public EventLoopGroup getEventLoopGroup() {
+        return eventLoopGroup;
     }
 
     public void close() {

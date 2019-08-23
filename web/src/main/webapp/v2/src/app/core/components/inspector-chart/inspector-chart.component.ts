@@ -1,15 +1,10 @@
 import { Component, OnInit, OnChanges, Input, Output, EventEmitter, ViewChild, ElementRef, SimpleChanges, Renderer2, OnDestroy } from '@angular/core';
-import bb, { Data, PrimitiveArray } from 'billboard.js';
+import bb, { PrimitiveArray } from 'billboard.js';
 import { Subject, merge, fromEvent } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 
 import { MessageQueueService, MESSAGE_TO, GutterEventService, NewUrlStateNotificationService } from 'app/shared/services';
 import { UrlPath } from 'app/shared/models';
-
-export interface IChartConfig {
-    dataConfig: Data;
-    elseConfig: {[key: string]: any};
-}
 
 @Component({
     selector: 'pp-inspector-chart',
@@ -42,11 +37,10 @@ export class InspectorChartComponent implements OnInit, OnChanges, OnDestroy {
                 filter((ratioArr: number[]) => !!ratioArr),
                 map(([upperRatio]: number[]) => upperRatio),
                 filter((ratio: number) => ratio >= 30 && ratio <= 55), // 30, 50: 차트가 포함되어 있는 split-area의 최소, 최대 사이즈(비율)
-                filter(() => !!this.chartInstance),
             )
         ).pipe(
             filter(() => {
-                return this.el.nativeElement.isConnected;
+                return this.chartInstance && this.el.nativeElement.isConnected;
             }),
         ).subscribe(() => {
             this.resize();
@@ -106,18 +100,23 @@ export class InspectorChartComponent implements OnInit, OnChanges, OnDestroy {
         const {columns: currColumns} = currentValue.dataConfig;
         const prevKeys = prevColumns.map(([key]: PrimitiveArray) => key);
         const currKeys = currColumns.map(([key]: PrimitiveArray) => key);
-        const unloadedKeys = prevKeys.filter((key: string) => !currKeys.includes(key));
+        const removedKeys = prevKeys.filter((key: string) => !currKeys.includes(key));
+        const unloadKeys = [...this.getEmptyDataKeys(currColumns), ...removedKeys];
         const {axis: {y, y2 = {}}} = currentValue.elseConfig;
 
         this.chartInstance.load({
             columns: currColumns,
-            unload: unloadedKeys,
+            unload: unloadKeys,
         });
 
         this.chartInstance.axis.max({
             y: y.max,
             y2: y2.max
         });
+    }
+
+    private getEmptyDataKeys(data: PrimitiveArray[]): string[] {
+        return data.slice(1).filter((d: PrimitiveArray) => d.length === 1).map(([key]: PrimitiveArray) => key as string);
     }
 
     private setViewBox(): void {

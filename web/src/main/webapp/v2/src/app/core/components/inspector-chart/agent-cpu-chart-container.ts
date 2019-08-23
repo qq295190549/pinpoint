@@ -2,11 +2,12 @@ import { PrimitiveArray, Data } from 'billboard.js';
 import { Observable } from 'rxjs';
 
 import { IInspectorChartContainer } from './inspector-chart-container-factory';
-import { makeYData, makeXData } from './inspector-chart-util';
+import { makeYData, makeXData } from 'app/core/utils/chart-util';
 import { IInspectorChartData, InspectorChartDataService } from './inspector-chart-data.service';
 
 export class AgentCPUChartContainer implements IInspectorChartContainer {
     private apiUrl = 'getAgentStat/cpuLoad/chart.pinpoint';
+
     defaultYMax = 100;
     title = 'JVM/System CPU Usage';
 
@@ -71,5 +72,9 @@ export class AgentCPUChartContainer implements IInspectorChartContainer {
 
     convertWithUnit(value: number): string {
         return `${value}%`;
+    }
+
+    getTooltipFormat(v: number, columnId: string, i: number): string {
+        return this.convertWithUnit(v);
     }
 }
